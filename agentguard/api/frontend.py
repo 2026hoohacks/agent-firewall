@@ -11,7 +11,7 @@ from fastapi.templating import Jinja2Templates
 from agentguard.api.auth import effective_user, session_user
 from agentguard.config.auth_settings import AuthSettings, get_auth_settings
 
-_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
+_TEMPLATES_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "templates"
 templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
 
 router = APIRouter(tags=["frontend"])

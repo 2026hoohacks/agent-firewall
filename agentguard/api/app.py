@@ -16,7 +16,7 @@ from agentguard.api.frontend import router as frontend_router
 from agentguard.api.routes import router
 from agentguard.config.auth_settings import get_auth_settings
 
-_STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+_STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "static"
 _ROOT = Path(__file__).resolve().parent.parent.parent
 
 
