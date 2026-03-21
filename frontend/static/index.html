@@ -5,57 +5,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AgentGuard Demo</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+              mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+            },
+            colors: {
+              border: "hsl(var(--border))",
+              input: "hsl(var(--input))",
+              ring: "hsl(var(--ring))",
+              background: "hsl(var(--background))",
+              foreground: "hsl(var(--foreground))",
+              primary: { DEFAULT: "hsl(var(--primary))", foreground: "hsl(var(--primary-foreground))" },
+              secondary: { DEFAULT: "hsl(var(--secondary))", foreground: "hsl(var(--secondary-foreground))" },
+              destructive: { DEFAULT: "hsl(var(--destructive))", foreground: "hsl(var(--destructive-foreground))" },
+              muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" },
+              accent: { DEFAULT: "hsl(var(--accent))", foreground: "hsl(var(--accent-foreground))" },
+              popover: { DEFAULT: "hsl(var(--popover))", foreground: "hsl(var(--popover-foreground))" },
+              card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" }
+            },
+            borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 2px)", sm: "calc(var(--radius) - 4px)" }
+          }
+        }
+      }
+    </script>
+    <style type="text/tailwindcss">
+      @layer base {
+        :root {
+          /* Zinc Dark Theme */
+          --background: 240 10% 3.9%;
+          --foreground: 0 0% 98%;
+          --card: 240 10% 3.9%;
+          --card-foreground: 0 0% 98%;
+          --popover: 240 10% 3.9%;
+          --popover-foreground: 0 0% 98%;
+          --primary: 0 0% 98%;
+          --primary-foreground: 240 5.9% 10%;
+          --secondary: 240 3.7% 15.9%;
+          --secondary-foreground: 0 0% 98%;
+          --muted: 240 3.7% 15.9%;
+          --muted-foreground: 240 5% 64.9%;
+          --accent: 240 3.7% 15.9%;
+          --accent-foreground: 0 0% 98%;
+          --destructive: 0 62.8% 30.6%;
+          --destructive-foreground: 0 0% 98%;
+          --border: 240 3.7% 15.9%;
+          --input: 240 3.7% 15.9%;
+          --ring: 240 4.9% 83.9%;
+          --radius: 0.5rem;
+        }
+      }
+      @layer components {
+        .feed-item { @apply border border-border border-l-4 rounded-lg p-4 mb-3 flex justify-between items-center bg-card text-card-foreground shadow-sm transition-colors hover:border-r-muted-foreground/50 hover:border-t-muted-foreground/50 hover:border-b-muted-foreground/50; }
+        .feed-item.allowed { @apply border-l-green-500; }
+        .feed-item.blocked { @apply border-l-destructive bg-destructive/5 hover:bg-destructive/10; }
+        .feed-item-left { @apply flex flex-col gap-1.5; }
+        .feed-action { @apply font-mono text-[0.85rem] font-medium text-primary bg-primary/10 px-1 py-0.5 rounded self-start; }
+        .feed-detail { @apply text-sm text-foreground; }
+        .feed-item.blocked .feed-detail { @apply text-destructive/90 font-medium; }
+        .feed-item-right { @apply flex flex-col items-end gap-2; }
+        .badge { @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-[0.65rem] font-semibold tracking-wide uppercase; }
+        .badge-allowed { @apply bg-green-500/10 text-green-500 border-green-500/20; }
+        .badge-blocked { @apply bg-destructive/10 text-destructive border-destructive/20; }
+        .feed-time { @apply text-xs text-muted-foreground font-mono; }
+        .empty-state { @apply p-12 text-center text-sm text-muted-foreground border border-dashed rounded-lg border-border bg-muted/5; }
+        
+        .overlay { @apply fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex justify-center items-center opacity-100 transition-opacity; }
+        .overlay.hidden { @apply opacity-0 pointer-events-none; }
+      }
+    </style>
 </head>
-<body>
-    <header>
-        <div class="header-left">
-            <div class="logo">
-                <span class="shield">🛡️</span> AgentGuard
+<body class="min-h-screen bg-background text-foreground antialiased flex flex-col">
+    <header class="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div class="container mx-auto flex h-16 items-center justify-between px-6 max-w-[800px]">
+            <div class="flex items-center gap-2 font-bold text-lg tracking-tight">
+                <span class="text-primary/80">🛡️</span> AgentGuard
             </div>
-        </div>
-        <div class="header-center">
-            <div class="status-indicator">
-                <span class="pulse"></span>
+            
+            <div class="hidden sm:flex items-center gap-2 text-xs font-medium text-green-500 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"></span>
                 Monitoring Agent Activity...
             </div>
-        </div>
-        <div class="header-right">
-            <button type="button" id="btn-clear" class="clear-feed-btn">Clear Feed</button>
+            
+            <button type="button" id="btn-clear" class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">Clear Feed</button>
         </div>
     </header>
 
-    <main>
-        <div class="feed-container">
-            <div class="feed-header">
-                <h2>Live Activity Feed</h2>
-                <span class="feed-subtitle">Real-time file system access events</span>
-            </div>
-            
-            <div id="feed" class="feed">
-                <!-- Feed items will be injected here via SSE -->
-                <div class="empty-state" id="empty-state">
-                    Waiting for agent to act...
-                </div>
+    <main class="flex-1 container mx-auto max-w-[800px] p-6 py-8">
+        <div class="flex flex-col space-y-2 mb-6 border-b border-border pb-4">
+            <h2 class="text-2xl font-semibold tracking-tight">Live Activity Feed</h2>
+            <p class="text-sm text-muted-foreground">Real-time file system access events</p>
+        </div>
+        
+        <div id="feed" class="flex flex-col gap-0">
+            <!-- Feed items will be injected here via SSE -->
+            <div class="empty-state" id="empty-state">
+                Waiting for agent to act...
             </div>
         </div>
     </main>
 
     <!-- Block Card Popup Overlay -->
     <div id="block-overlay" class="overlay hidden">
-        <div class="block-card">
-            <div class="block-header">
-                <div class="block-icon">🛑</div>
-                <h2>AgentGuard blocked an action</h2>
+        <div class="rounded-xl border border-destructive bg-card text-card-foreground shadow-lg w-full max-w-md mx-4 overflow-hidden transform transition-all">
+            <div class="flex flex-col space-y-1.5 p-6 border-b border-border bg-destructive/10">
+                <div class="flex items-center gap-2 font-semibold text-lg text-foreground tracking-tight">
+                    <span>🛑</span> AgentGuard blocked an action
+                </div>
             </div>
-            <div class="block-body">
-                <p>Your AI tried to access:</p>
-                <div class="path-display" id="block-path">~/.ssh/id_rsa</div>
-                <p class="explanation" id="block-explanation">This file contains your private key. Exposing it could compromise your accounts.</p>
+            <div class="p-6 pt-5 flex flex-col gap-4">
+                <p class="text-sm font-medium">Your AI tried to access:</p>
+                <div class="font-mono text-xs bg-muted/30 border border-border rounded-md p-3 text-destructive break-all" id="block-path">~/.ssh/id_rsa</div>
+                <p class="text-sm text-muted-foreground leading-relaxed" id="block-explanation">This file contains your private key. Exposing it could compromise your accounts.</p>
             </div>
-            <div class="block-actions">
-                <button id="btn-allow" class="btn-allow">Allow Once</button>
-                <button id="btn-block" class="btn-block">Block</button>
+            <div class="flex items-center p-6 pt-0 gap-3">
+                <button id="btn-allow" class="inline-flex flex-1 h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground">Allow Once</button>
+                <button id="btn-block" class="inline-flex flex-1 h-10 items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90">Block</button>
             </div>
         </div>
     </div>

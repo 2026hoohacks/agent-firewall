@@ -1,47 +1,60 @@
 {% extends "base.html" %}
 {% block title %}Session report — AgentGuard{% endblock %}
-{% block body_class %}page-report{% endblock %}
 
 {% block content %}
-<div class="report-page" id="report-root">
-    <div class="page-header">
+<div id="report-root" class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="page-title">Session report</h1>
-            <p class="page-sub">Aggregated counts and full event history (demo).</p>
+            <h1 class="text-3xl font-bold tracking-tight">Session report</h1>
+            <p class="text-muted-foreground mt-1 text-sm md:text-base">Aggregated counts and full event history (demo).</p>
         </div>
-        <div class="header-actions">
-            <button type="button" class="btn btn-secondary" id="btn-download-json">Download JSON</button>
-            <a href="/dashboard" class="btn btn-ghost">Back to dashboard</a>
+        <div class="flex items-center gap-2">
+            <button type="button" class="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground" id="btn-download-json">Download JSON</button>
+            <a href="/dashboard" class="inline-flex h-10 items-center justify-center rounded-md border border-transparent bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground shadow-sm transition-colors hover:bg-secondary/80">Back to dashboard</a>
         </div>
     </div>
 
-    <section class="cards-row" id="report-summary">
-        <article class="stat-card"><span class="stat-label">Allowed</span><span class="stat-value mono" id="r-allowed">—</span></article>
-        <article class="stat-card"><span class="stat-label">Blocked</span><span class="stat-value mono" id="r-blocked">—</span></article>
-        <article class="stat-card"><span class="stat-label">Pending review</span><span class="stat-value mono" id="r-pending">—</span></article>
-        <article class="stat-card"><span class="stat-label">Generated</span><span class="stat-value mono small" id="r-generated">—</span></article>
-    </section>
-
-    <section class="panel">
-        <div class="panel-head">
-            <h2>All events</h2>
+    <!-- Stats Row -->
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4" id="report-summary">
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between space-y-2">
+            <h3 class="tracking-tight text-sm font-medium text-muted-foreground">Allowed</h3>
+            <div class="text-2xl font-bold font-mono" id="r-allowed">—</div>
         </div>
-        <div class="table-wrap">
-            <table class="data-table" id="report-table">
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between space-y-2">
+            <h3 class="tracking-tight text-sm font-medium text-muted-foreground">Blocked</h3>
+            <div class="text-2xl font-bold font-mono text-destructive" id="r-blocked">—</div>
+        </div>
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between space-y-2">
+            <h3 class="tracking-tight text-sm font-medium text-yellow-500">Pending review</h3>
+            <div class="text-2xl font-bold font-mono text-yellow-500" id="r-pending">—</div>
+        </div>
+        <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between space-y-2">
+            <h3 class="tracking-tight text-sm font-medium text-muted-foreground">Generated</h3>
+            <div class="whitespace-nowrap font-mono text-sm text-muted-foreground mt-auto pt-2" id="r-generated">—</div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="rounded-md border bg-card text-card-foreground shadow-sm overflow-hidden">
+        <div class="p-6 pb-4 border-b border-border flex items-center justify-between">
+            <h2 class="text-lg font-semibold leading-none tracking-tight">All events</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left [&_th]:h-12 [&_th]:px-4 [&_th]:align-middle [&_th]:font-medium [&_th]:text-muted-foreground [&_tr]:border-b [&_tr]:border-border [&_tr:last-child]:border-0 [&_td]:p-4 [&_td]:align-middle [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-muted/50" id="report-table">
                 <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Time</th>
-                        <th>Type</th>
-                        <th>Severity</th>
-                        <th>Status</th>
+                    <tr class="bg-muted/20">
+                        <th class="w-[80px]">ID</th>
+                        <th class="w-[180px]">Time</th>
+                        <th class="w-[200px]">Type</th>
+                        <th class="w-[100px]">Severity</th>
+                        <th class="w-[100px]">Status</th>
                         <th>Description</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
             </table>
         </div>
-    </section>
+    </div>
 </div>
 <script src="/static/report.js" defer></script>
 {% endblock %}

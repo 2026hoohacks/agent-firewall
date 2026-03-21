@@ -1,46 +1,46 @@
 {% extends "base.html" %}
 {% block title %}AgentGuard — Human-in-the-loop firewall{% endblock %}
-{% block body_class %}page-landing{% endblock %}
 
 {% block content %}
-<section class="hero">
-    <div class="hero-glow" aria-hidden="true"></div>
-    <div class="hero-inner">
-        <p class="eyebrow">AI security</p>
-        <h1>AgentGuard</h1>
-        <p class="hero-sub">Human-in-the-loop firewall for AI agents</p>
-        <p class="hero-desc">
-            Supervise autonomous agents in real time. AgentGuard flags prompt injections, sensitive file access,
-            risky outbound transfers, suspicious requests, unauthorized tools, and policy violations—so you can
-            approve, block, and audit before damage lands.
-        </p>
-        <div class="hero-actions">
-            {% if logged_in %}
-            <a href="/dashboard" class="btn btn-primary btn-lg">Go to Dashboard</a>
-            {% elif auth_configured %}
-            <a href="/login" class="btn btn-primary btn-lg">Log in</a>
-            {% else %}
-            <a href="/dashboard" class="btn btn-primary btn-lg">Open Dashboard (demo)</a>
-            <p class="hint">Set <code>AUTH0_*</code> and <code>SECRET_KEY</code> in <code>.env</code> to enable login.</p>
-            {% endif %}
+<section class="flex flex-col items-center max-w-3xl mx-auto pt-24 pb-16 text-center">
+    <p class="text-sm font-semibold uppercase tracking-wider text-primary mb-4">AI security</p>
+    <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-6">AgentGuard</h1>
+    <p class="text-lg md:text-xl text-muted-foreground mb-10 max-w-[640px]">
+        Supervise autonomous agents in real time. AgentGuard flags prompt injections, sensitive file access,
+        risky outbound transfers, suspicious requests, unauthorized tools, and policy violations—so you can
+        approve, block, and audit before damage lands.
+    </p>
+    <div class="flex flex-col sm:flex-row items-center gap-4">
+        {% if logged_in %}
+        <a href="/dashboard" class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">Go to Dashboard</a>
+        {% elif auth_configured %}
+        <a href="/login" class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">Log in</a>
+        {% else %}
+        <div class="flex flex-col items-center gap-2">
+            <a href="/dashboard" class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90">Open Dashboard (demo)</a>
+            <p class="text-sm text-muted-foreground mt-2">Set <code class="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">AUTH0_*</code> and <code class="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">SECRET_KEY</code> in <code class="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">.env</code> to enable login.</p>
         </div>
-        {% if request.query_params.get('auth') %}
-        <p class="banner banner-warn" role="status">Could not complete sign-in ({{ request.query_params.get('auth') }}). Check Auth0 callback URL and secrets.</p>
         {% endif %}
     </div>
+    {% if request.query_params.get('auth') %}
+    <div class="mt-8 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive flex items-center justify-center w-full max-w-md" role="alert">
+        <p class="text-sm font-medium">Could not complete sign-in ({{ request.query_params.get('auth') }}). Check Auth0 callback URL and secrets.</p>
+    </div>
+    {% endif %}
 </section>
-<section class="feature-grid">
-    <article class="feature-card">
-        <h3>Live supervision</h3>
-        <p>Streaming activity feed with severity and policy context for every flagged step.</p>
-    </article>
-    <article class="feature-card">
-        <h3>Review queue</h3>
-        <p>Pending actions surface Approve and Block controls with a full rationale panel.</p>
-    </article>
-    <article class="feature-card">
-        <h3>Session audit</h3>
-        <p>Allowed vs blocked counts, pending review, and an exportable JSON report for demos.</p>
-    </article>
+
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto pb-24">
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col space-y-2">
+        <h3 class="font-semibold leading-none tracking-tight">Live supervision</h3>
+        <p class="text-sm text-muted-foreground">Streaming activity feed with severity and policy context for every flagged step.</p>
+    </div>
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col space-y-2">
+        <h3 class="font-semibold leading-none tracking-tight">Review queue</h3>
+        <p class="text-sm text-muted-foreground">Pending actions surface Approve and Block controls with a full rationale panel.</p>
+    </div>
+    <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col space-y-2">
+        <h3 class="font-semibold leading-none tracking-tight">Session audit</h3>
+        <p class="text-sm text-muted-foreground">Allowed vs blocked counts, pending review, and an exportable JSON report for demos.</p>
+    </div>
 </section>
 {% endblock %}
