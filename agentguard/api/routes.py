@@ -66,9 +66,9 @@ async def proxy_read_file(body: Dict[str, Any]) -> Dict[str, Any]:
 # SSE event stream — real-time UI updates
 # ---------------------------------------------------------------------------
 
-@router.get("/events")
+@router.get("/events/stream")
 async def sse_events(request: Request):
-    """Server-Sent Events stream for real-time file access events."""
+    """Server-Sent Events stream for real-time file access events (interceptor)."""
     queue: asyncio.Queue = asyncio.Queue(maxsize=100)
     _sse_queues.append(queue)
 
