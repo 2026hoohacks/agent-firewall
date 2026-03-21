@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — AgentGuard{% endblock %}
+{% block body_class %}page-dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-page" id="dashboard-root"
+     data-auth-configured="{{ 'true' if auth_configured else 'false' }}"
+     data-logged-in="{{ 'true' if logged_in else 'false' }}">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Operations dashboard</h1>
+            <p class="page-sub">Live agent activity, review queue, and policy context (demo data).</p>
+        </div>
+        <a href="/report" class="btn btn-secondary">Session report</a>
+    </div>
+
+    <section class="cards-row" id="summary-cards" aria-live="polite">
+        <article class="stat-card">
+            <span class="stat-label">Active session</span>
+            <span class="stat-value" id="card-session">—</span>
+        </article>
+        <article class="stat-card">
+            <span class="stat-label">Total events</span>
+            <span class="stat-value mono" id="card-total">—</span>
+        </article>
+        <article class="stat-card">
+            <span class="stat-label">Flagged</span>
+            <span class="stat-value mono" id="card-flagged">—</span>
+        </article>
+        <article class="stat-card">
+            <span class="stat-label">Blocked</span>
+            <span class="stat-value mono" id="card-blocked">—</span>
+        </article>
+        <article class="stat-card stat-card-risk">
+            <span class="stat-label">Risk score</span>
+            <span class="stat-value mono" id="card-risk">—</span>
+        </article>
+    </section>
+
+    <div class="dashboard-grid">
+        <section class="panel panel-feed">
+            <div class="panel-head">
+                <h2>Live event feed</h2>
+                <span class="panel-meta mono" id="poll-status">Connecting…</span>
+            </div>
+            <ul class="event-list" id="event-feed"></ul>
+        </section>
+
+        <section class="panel panel-queue">
+            <div class="panel-head">
+                <h2>Review queue</h2>
+                <span class="panel-meta" id="pending-count">0 pending</span>
+            </div>
+            <ul class="event-list compact" id="review-queue"></ul>
+        </section>
+
+        <section class="panel panel-detail">
+            <div class="panel-head">
+                <h2>Event detail</h2>
+            </div>
+            <div class="detail-empty" id="detail-empty">Select an event to inspect policy context.</div>
+            <div class="detail-body hidden" id="detail-body">
+                <dl class="detail-dl">
+                    <dt>ID</dt><dd class="mono" id="d-id"></dd>
+                    <dt>Type</dt><dd class="mono" id="d-type"></dd>
+                    <dt>Severity</dt><dd id="d-severity"></dd>
+                    <dt>Status</dt><dd id="d-status"></dd>
+                    <dt>Description</dt><dd id="d-desc"></dd>
+                    <dt>Explanation</dt><dd id="d-explain"></dd>
+                    <dt>Policy</dt><dd id="d-policy"></dd>
+                    <dt>Recommended</dt><dd id="d-rec"></dd>
+                </dl>
+                <div class="detail-actions hidden" id="detail-actions">
+                    <button type="button" class="btn btn-success" id="btn-approve">Approve</button>
+                    <button type="button" class="btn btn-danger" id="btn-block">Block</button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+<script src="/static/app.js" defer></script>
+{% endblock %}
