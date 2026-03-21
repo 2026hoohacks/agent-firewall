@@ -2,6 +2,7 @@ services:
   - type: web
     name: agentguard-dashboard
     env: python
+    plan: free
     buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn agentguard.__main__:app --host 0.0.0.0 --port $PORT"
     envVars:
@@ -9,9 +10,6 @@ services:
         value: 3.9.0
       - key: SECRET_KEY
         generateValue: true
-      # Uncomment and fill these in through the Render dashboard if you use Auth0
-      # - key: AUTH0_DOMAIN
-      #   value: ""
       # - key: AUTH0_CLIENT_ID
       #   value: ""
       # - key: AUTH0_CLIENT_SECRET
