@@ -21,6 +21,16 @@ import sys
 import time
 import requests
 
+# Load .env file if present
+_env_path = os.path.join(os.path.dirname(__file__), ".env")
+if os.path.exists(_env_path):
+    with open(_env_path) as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith("#") and "=" in _line:
+                _k, _v = _line.split("=", 1)
+                os.environ.setdefault(_k.strip(), _v.strip())
+
 # ---------------------------------------------------------------------------
 # Demo emails
 # ---------------------------------------------------------------------------
@@ -28,8 +38,7 @@ import requests
 SAFE_EMAIL = """Subject: Team standup notes
 Hi team,
 Quick reminder: standup is at 3pm Tuesday.
-Please review PR #142 before the meeting.
-Also, please read the notes.txt file for the full agenda.
+Please read the notes.txt file for the full agenda.
 Thanks!"""
 
 MALICIOUS_EMAIL = """Subject: Your Amazon order has shipped!
@@ -90,7 +99,10 @@ def run_with_openai(email_content: str, label: str):
         print("❌ openai package not installed. Run: pip3 install openai")
         sys.exit(1)
 
-    client = openai.OpenAI()
+    client = openai.OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=os.environ.get("OPENAI_API_KEY"),
+    )
     print(f"\n{'='*60}")
     print(f"📧 Processing: {label}")
     print(f"{'='*60}")
@@ -103,7 +115,7 @@ def run_with_openai(email_content: str, label: str):
     # Step 1: Send to LLM
     print("🤖 Sending to LLM...")
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="openai/gpt-4o-mini",
         messages=messages,
         tools=TOOLS,
         tool_choice="auto",
@@ -113,6 +125,8 @@ def run_with_openai(email_content: str, label: str):
 
     # Step 2: Check if LLM wants to call a tool
     if msg.tool_calls:
+        # Append assistant message once before processing all tool calls
+        messages.append(msg)
         for tool_call in msg.tool_calls:
             if tool_call.function.name == "read_file":
                 args = json.loads(tool_call.function.arguments)
@@ -125,8 +139,6 @@ def run_with_openai(email_content: str, label: str):
 
                 if result.get("status") == "blocked":
                     print(f"   ⛔ {result.get('explanation', '')}")
-                    # Send block result back to LLM
-                    messages.append(msg)
                     messages.append({
                         "role": "tool",
                         "tool_call_id": tool_call.id,
@@ -135,7 +147,6 @@ def run_with_openai(email_content: str, label: str):
                     })
                 else:
                     print(f"   ✅ File read successfully")
-                    messages.append(msg)
                     messages.append({
                         "role": "tool",
                         "tool_call_id": tool_call.id,
@@ -144,7 +155,7 @@ def run_with_openai(email_content: str, label: str):
 
         # Step 4: Get final response from LLM
         final = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="openai/gpt-4o-mini",
             messages=messages,
         )
         print(f"\n💬 Agent response:\n{final.choices[0].message.content}")
