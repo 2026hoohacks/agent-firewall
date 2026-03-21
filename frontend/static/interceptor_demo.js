@@ -1,40 +1,30 @@
-/* AgentGuard Hackathon Demo — Frontend Logic */
+/* Legacy interceptor feed (served at /static/index.html) — SSE /api/events/stream */
 
 (function () {
     'use strict';
 
     const API = '/api';
     const feedEl = document.getElementById('feed');
+    if (!feedEl) return;
+
     const overlay = document.getElementById('block-overlay');
     const emptyState = document.getElementById('empty-state');
-
-    // Block card elements
     const blockPath = document.getElementById('block-path');
     const blockExplanation = document.getElementById('block-explanation');
     const btnBlock = document.getElementById('btn-block');
     const btnAllow = document.getElementById('btn-allow');
-
-    // Keep track of seen event IDs to prevent duplicates in SSE
     const seenEvents = new Set();
 
-    // -----------------------------------------------------------------------
-    // SSE Event Stream
-    // -----------------------------------------------------------------------
-    
     function connectSSE() {
-        const evtSource = new EventSource(`${API}/events`);
-        
-        evtSource.onmessage = function(e) {
+        const evtSource = new EventSource(`${API}/events/stream`);
+
+        evtSource.onmessage = function (e) {
             if (e.data === 'keepalive') return;
-            
             try {
                 const event = JSON.parse(e.data);
                 if (seenEvents.has(event.id)) return;
                 seenEvents.add(event.id);
-                
                 renderEvent(event);
-                
-                // Show popup if blocked
                 if (event.status === 'blocked') {
                     showBlockCard(event);
                 }
@@ -42,17 +32,13 @@
                 console.error('Error parsing SSE event:', err);
             }
         };
-        
-        evtSource.onerror = function(err) {
+
+        evtSource.onerror = function (err) {
             console.error('SSE Error:', err);
             evtSource.close();
             setTimeout(connectSSE, 3000);
         };
     }
-
-    // -----------------------------------------------------------------------
-    // UI Rendering
-    // -----------------------------------------------------------------------
 
     function renderEvent(event) {
         if (emptyState) emptyState.remove();
@@ -66,8 +52,6 @@
 
         const item = document.createElement('div');
         item.className = `feed-item ${statusClass}`;
-        
-        // Tool call formatting: read_file('path')
         const actionHtml = `read_file(<span style="color:var(--accent)">'${escHTML(event.path)}'</span>)`;
 
         item.innerHTML = `
@@ -78,16 +62,10 @@
             <div class="feed-item-right">
                 <span class="badge ${badgeClass}">${badgeLabel}</span>
                 <span class="feed-time">${time}</span>
-            </div>
-        `;
+            </div>`;
 
-        // Add to top of feed
         feedEl.insertBefore(item, feedEl.firstChild);
     }
-
-    // -----------------------------------------------------------------------
-    // Block Card Logic
-    // -----------------------------------------------------------------------
 
     function showBlockCard(event) {
         blockPath.textContent = event.path;
@@ -101,10 +79,6 @@
 
     btnBlock.addEventListener('click', hideBlockCard);
     btnAllow.addEventListener('click', hideBlockCard);
-
-    // -----------------------------------------------------------------------
-    // Utilities
-    // -----------------------------------------------------------------------
 
     function escHTML(str) {
         if (!str) return '';
@@ -125,7 +99,5 @@
         }
     });
 
-    // Start
     connectSSE();
-
 })();
