@@ -1,0 +1,129 @@
+# AgentGuard Default Policy Configuration
+# =========================================
+# All settings can be overridden at runtime via the /api/policy endpoint.
+
+# Filesystem roots the agent is allowed to access.
+# Empty list = no restriction (rely on blocked patterns instead). 
+allowed_roots: []
+
+# Glob patterns for paths that are ALWAYS blocked or require approval.
+blocked_path_patterns:
+  # SSH keys and config
+  - "**/.ssh/*"
+  - "**/id_rsa*"
+  - "**/id_dsa*"
+  - "**/id_ed25519*"
+  - "**/id_ecdsa*"
+  - "**/known_hosts"
+  - "**/authorized_keys"
+
+  # Environment / secret files
+  - "**/.env"
+  - "**/.env.*"
+  - "**/.env.local"
+  - "**/.env.production"
+  - "**/.npmrc"
+  - "**/.pypirc"
+  - "**/.netrc"
+
+  # Git credentials
+  - "**/.git-credentials"
+  - "**/.gitconfig"
+
+  # Docker
+  - "**/.docker/config.json"
+
+  # Kubernetes
+  - "**/kubeconfig"
+  - "**/.kube/config"
+
+  # Cloud provider credentials
+  - "**/.aws/credentials"
+  - "**/.aws/config"
+  - "**/gcloud/**/*credentials*"
+  - "**/.azure/**/*"
+
+  # Terraform
+  - "**/*.tfstate"
+  - "**/*.tfstate.backup"
+
+  # Certificates and keys
+  - "**/*.pem"
+  - "**/*.p12"
+  - "**/*.pfx"
+  - "**/*.key"
+
+  # Password / secret managers
+  - "**/*password*vault*"
+  - "**/*keychain*"
+  - "**/*wallet*seed*"
+
+  # Browser data
+  - "**/*cookie*store*"
+  - "**/Cookies"
+  - "**/Login Data"
+
+  # Token / session caches
+  - "**/*token*cache*"
+  - "**/*session*"
+
+  # CI/CD secrets
+  - "**/.github/secrets*"
+  - "**/.circleci/*"
+
+# Domains the agent is allowed to navigate to / contact.
+allowed_domains: []
+
+# Domains that are always blocked.
+blocked_domains: []
+
+# Email recipients that do NOT require additional confirmation.
+trusted_recipients: []
+
+# Additional file patterns treated as sensitive (merged with built-in list).
+sensitive_file_patterns: []
+
+# Data classes that trigger sensitivity checks.
+sensitive_data_classes:
+  - password
+  - api_key
+  - access_token
+  - refresh_token
+  - private_key
+  - seed_phrase
+  - session_cookie
+  - government_id
+  - ssn
+  - bank_data
+  - card_data
+  - tax_data
+  - health_data
+  - biometric_data
+  - private_message
+  - confidential_document
+  - legal_document
+  - employment_record
+  - source_code_secret
+  - internal_credential
+  - proprietary_dataset
+
+# Consent gates
+require_approval_for_send: true
+require_approval_for_execute: true
+require_approval_for_delete: true
+require_approval_for_external_upload: true
+
+# Tools that are always safe (skip deep analysis).
+safe_tools: []
+
+# Tools that are always blocked.
+blocked_tools: []
+
+# ---------------------------------------------------------------------------
+# LLM Analysis Layer
+# ---------------------------------------------------------------------------
+# Enable AI-powered deep analysis for unlimited scope reasoning.
+# Requires an OpenAI API key (set here or via OPENAI_API_KEY env var).
+llm_enabled: false
+llm_model: "gpt-4o-mini"
+llm_api_key: ""
