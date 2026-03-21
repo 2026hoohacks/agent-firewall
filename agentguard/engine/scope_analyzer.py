@@ -10,6 +10,7 @@ import re
 from typing import Dict, List, Optional
 
 from agentguard.models import ScopeAlignment, ScopeReport
+from agentguard.engine.tool_normalizer import canonicalize_tool_name
 
 # ---------------------------------------------------------------------------
 # Goal → expected-action mappings (heuristic)
@@ -87,7 +88,8 @@ def _tool_is_obviously_unrelated(tool: str, goal_category: str | None) -> bool:
         return False
     mapping = _GOAL_ACTION_MAP.get(goal_category, {})
     disallowed = mapping.get("disallowed_tools", [])
-    return tool.lower() in [t.lower() for t in disallowed]
+    canonical_tool = canonicalize_tool_name(tool)
+    return canonical_tool in [canonicalize_tool_name(t) for t in disallowed]
 
 
 def _tool_is_expected(tool: str, goal_category: str | None) -> bool:
@@ -96,7 +98,8 @@ def _tool_is_expected(tool: str, goal_category: str | None) -> bool:
         return False  # unknown goal, can't confirm
     mapping = _GOAL_ACTION_MAP.get(goal_category, {})
     allowed = mapping.get("allowed_tools", [])
-    return tool.lower() in [t.lower() for t in allowed]
+    canonical_tool = canonicalize_tool_name(tool)
+    return canonical_tool in [canonicalize_tool_name(t) for t in allowed]
 
 
 # ---------------------------------------------------------------------------
