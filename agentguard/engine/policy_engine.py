@@ -7,6 +7,7 @@ Follows the 10-step reasoning procedure from the specification.
 from __future__ import annotations
 
 import json
+from collections import deque
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from agentguard.config.config_loader import get_config
@@ -37,7 +38,7 @@ from agentguard.models import (
 )
 
 # In-memory audit store (production would use a database)
-_audit_store: List[Verdict] = []
+_audit_store: deque[Verdict] = deque(maxlen=1000)
 
 
 def get_audit_log() -> List[Verdict]:

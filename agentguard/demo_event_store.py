@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import threading
 import time
+from collections import deque
 from typing import Any, Dict, List, Literal, Optional
 
 _lock = threading.Lock()
-_events: List[Dict[str, Any]] = []
+_events: deque[Dict[str, Any]] = deque(maxlen=1000)
 _next_id = 1
 
 _SEED: List[Dict[str, Any]] = [
@@ -155,5 +156,5 @@ def reset_demo() -> None:
     """Test helper: clear store."""
     global _events, _next_id
     with _lock:
-        _events = []
+        _events.clear()
         _next_id = 1
