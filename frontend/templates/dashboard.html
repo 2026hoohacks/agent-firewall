@@ -2,103 +2,230 @@
 {% block title %}Dashboard — AgentGuard{% endblock %}
 
 {% block content %}
-<div id="dashboard-root"
-     data-auth-configured="{{ 'true' if auth_configured else 'false' }}"
-     data-logged-in="{{ 'true' if logged_in else 'false' }}" class="space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-            <h1 class="text-3xl font-bold tracking-tight">Operations dashboard</h1>
-            <p class="text-muted-foreground mt-1 text-sm md:text-base">Live agent activity, review queue, and policy context (demo data).</p>
-        </div>
-        <a href="/report" class="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">Session report</a>
-    </div>
+<div class="dashboard-page" id="dashboard-root">
 
-    <!-- Shadcn Card Row for Stats -->
-    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5" id="summary-cards" aria-live="polite">
-        <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between space-y-2">
-            <h3 class="tracking-tight text-sm font-medium text-muted-foreground">Active session</h3>
-            <div class="text-2xl font-bold" id="card-session">—</div>
-        </div>
-        <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between space-y-2">
-            <h3 class="tracking-tight text-sm font-medium text-muted-foreground">Total events</h3>
-            <div class="text-2xl font-bold font-mono" id="card-total">—</div>
-        </div>
-        <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between space-y-2">
-            <h3 class="tracking-tight text-sm font-medium text-muted-foreground">Flagged</h3>
-            <div class="text-2xl font-bold font-mono" id="card-flagged">—</div>
-        </div>
-        <div class="rounded-xl border bg-card text-card-foreground shadow-sm p-6 flex flex-col justify-between space-y-2">
-            <h3 class="tracking-tight text-sm font-medium text-muted-foreground">Blocked</h3>
-            <div class="text-2xl font-bold font-mono" id="card-blocked">—</div>
-        </div>
-        <div class="rounded-xl border border-destructive/50 bg-destructive/10 text-destructive shadow-sm p-6 flex flex-col justify-between space-y-2">
-            <h3 class="tracking-tight text-sm font-medium opacity-80 uppercase tracking-wide">Risk score</h3>
-            <div class="text-2xl font-bold font-mono" id="card-risk">—</div>
-        </div>
-    </div>
+    <div class="dash-layout">
 
-    <div class="grid gap-6 md:grid-cols-12 items-start mt-6">
-        
-        <!-- Live event feed (Left Panel) -->
-        <div class="md:col-span-12 lg:col-span-4 rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden flex flex-col h-[600px]">
-            <div class="flex flex-col space-y-1.5 p-6 pb-4 border-b border-border bg-muted/20">
-                <div class="flex items-center justify-between">
-                    <h3 class="font-semibold leading-none tracking-tight">Live event feed</h3>
-                    <span class="text-[0.65rem] font-mono text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-sm" id="poll-status">Connecting…</span>
+        <!-- LEFT COLUMN -->
+        <div class="dash-left">
+
+            <div class="page-header" style="margin-bottom:0">
+                <div>
+                    <h1 class="page-title">Operations dashboard</h1>
+                    <p class="page-sub">Live agent activity and security monitoring.</p>
                 </div>
+                <a href="/report" class="btn btn-secondary">Session report</a>
             </div>
-            <div class="flex-1 overflow-y-auto p-4">
-                <ul class="space-y-0" id="event-feed"></ul>
-            </div>
-        </div>
 
-        <!-- Review queue (Middle Panel) -->
-        <div class="md:col-span-6 lg:col-span-3 rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden flex flex-col max-h-[600px] h-[600px]">
-            <div class="flex flex-col space-y-1.5 p-6 pb-4 border-b border-border bg-muted/20">
-                <div class="flex items-center justify-between">
-                    <h3 class="font-semibold leading-none tracking-tight">Review queue</h3>
-                    <span class="text-xs font-medium text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded-full" id="pending-count">0 pending</span>
-                </div>
-            </div>
-            <div class="flex-1 overflow-y-auto p-4">
-                <ul class="space-y-0" id="review-queue"></ul>
-            </div>
-        </div>
+            <section class="cards-row" id="summary-cards" aria-live="polite">
+                <article class="stat-card">
+                    <span class="stat-label">Active session</span>
+                    <span class="stat-value" id="card-session">—</span>
+                </article>
+                <article class="stat-card">
+                    <span class="stat-label">Total events</span>
+                    <span class="stat-value mono" id="card-total">—</span>
+                </article>
+                <article class="stat-card">
+                    <span class="stat-label">Blocked</span>
+                    <span class="stat-value mono" id="card-blocked">—</span>
+                </article>
+            </section>
 
-        <!-- Event detail (Right Panel) -->
-        <div class="md:col-span-6 lg:col-span-5 rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden flex flex-col h-[600px]">
-            <div class="flex flex-col space-y-1.5 p-6 pb-4 border-b border-border bg-muted/20">
-                <h3 class="font-semibold leading-none tracking-tight">Event detail</h3>
-            </div>
-            
-            <!-- Empty state -->
-            <div class="p-8 text-center text-sm text-muted-foreground flex items-center justify-center flex-1" id="detail-empty">
-                Select an event to inspect policy context.
-            </div>
-            
-            <!-- Body state -->
-            <div class="hidden flex-1 flex flex-col overflow-hidden" id="detail-body">
-                <div class="p-6 overflow-y-auto flex-1 text-sm space-y-4">
-                    <div class="grid grid-cols-[100px_1fr] gap-x-4 gap-y-3">
-                        <div class="font-medium text-muted-foreground">ID</div><div class="font-mono text-xs break-all text-foreground" id="d-id"></div>
-                        <div class="font-medium text-muted-foreground">Type</div><div class="font-mono text-xs text-primary bg-primary/10 px-1 py-0.5 rounded inline-flex self-start" id="d-type"></div>
-                        <div class="font-medium text-muted-foreground mt-1">Severity</div><div id="d-severity" class="mt-1"></div>
-                        <div class="font-medium text-muted-foreground mt-1">Status</div><div id="d-status" class="mt-1"></div>
-                        <div class="font-medium text-muted-foreground">Description</div><div id="d-desc" class="text-foreground leading-relaxed"></div>
-                        <div class="font-medium text-muted-foreground pt-3 border-t border-border mt-1">Explanation</div><div id="d-explain" class="pt-3 border-t border-border text-muted-foreground leading-relaxed"></div>
-                        <div class="font-medium text-muted-foreground">Policy</div><div id="d-policy" class="text-muted-foreground leading-relaxed"></div>
-                        <div class="font-medium text-muted-foreground">Recommendation</div><div id="d-rec" class="text-muted-foreground italic"></div>
+            <!-- Demo panel -->
+            <section class="demo-panel" id="demo-panel">
+                <div class="demo-header">
+                    <div>
+                        <h2 class="demo-title">Live Attack Demo</h2>
+                        <p class="demo-subtitle">Click each step in order to see the attack and the block.</p>
                     </div>
+                    <button class="demo-reset-btn" id="demo-reset-btn" onclick="resetDemo()">Reset</button>
                 </div>
-                
-                <div class="hidden flex gap-3 p-6 pt-4 border-t border-border bg-muted/5 mt-auto" id="detail-actions">
-                    <button type="button" class="inline-flex h-9 flex-1 items-center justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-green-600/90 transition-colors" id="btn-approve">Approve</button>
-                    <button type="button" class="inline-flex h-9 flex-1 items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow hover:bg-destructive/90 transition-colors" id="btn-block">Block</button>
+
+                <div class="demo-steps">
+                    <button class="demo-btn" id="demo-btn-1" onclick="runDemoStep(1)">
+                        <span class="demo-step-num">1</span>
+                        <span class="demo-step-label">Normal Operation</span>
+                        <span class="demo-check hidden" id="check-1">&#10003;</span>
+                    </button>
+                    <div class="demo-arrow">&#8594;</div>
+                    <button class="demo-btn" id="demo-btn-2" onclick="runDemoStep(2)">
+                        <span class="demo-step-num">2</span>
+                        <span class="demo-step-label">Show Attack Email</span>
+                        <span class="demo-check hidden" id="check-2">&#10003;</span>
+                    </button>
+                    <div class="demo-arrow">&#8594;</div>
+                    <button class="demo-btn demo-btn-danger" id="demo-btn-3" onclick="runDemoStep(3)">
+                        <span class="demo-step-num">3</span>
+                        <span class="demo-step-label">Leak (No Guard)</span>
+                        <span class="demo-check hidden" id="check-3">&#10003;</span>
+                    </button>
+                    <div class="demo-arrow">&#8594;</div>
+                    <button class="demo-btn demo-btn-shield" id="demo-btn-4" onclick="runDemoStep(4)">
+                        <span class="demo-step-num">4</span>
+                        <span class="demo-step-label">Block (AgentGuard)</span>
+                        <span class="demo-check hidden" id="check-4">&#10003;</span>
+                    </button>
                 </div>
-            </div>
+
+                <div class="demo-output hidden" id="demo-output"></div>
+            </section>
+
         </div>
+
+        <!-- RIGHT COLUMN: live event feed -->
+        <aside class="dash-sidebar">
+            <div class="sidebar-head">
+                <h2>Live Events</h2>
+                <span class="panel-meta" id="sse-status">Connecting</span>
+            </div>
+            <ul class="feed-list" id="feed-list">
+                <li class="feed-empty">Waiting for events</li>
+            </ul>
+        </aside>
 
     </div>
 </div>
+
 <script src="/static/app.js" defer></script>
+<script>
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function runTerminal(containerId, lines) {
+    const box = document.getElementById(containerId);
+    box.innerHTML = '';
+    box.classList.remove('hidden');
+    for (const line of lines) {
+        await sleep(600);
+        if (line.__type === 'json') {
+            const pre = document.createElement('pre');
+            pre.className = 'term-json term-line';
+            pre.textContent = JSON.stringify(line.data, null, 2);
+            box.appendChild(pre);
+        } else {
+            const div = document.createElement('div');
+            div.className = 'term-line';
+            div.textContent = line;
+            box.appendChild(div);
+        }
+        box.scrollTop = box.scrollHeight;
+    }
+}
+
+function showResultCard(html) {
+    const out = document.getElementById('demo-output');
+    out.classList.remove('hidden');
+    const card = document.createElement('div');
+    card.innerHTML = html;
+    out.appendChild(card);
+}
+
+async function runDemoStep(step) {
+    const btn = document.getElementById('demo-btn-' + step);
+    btn.disabled = true;
+    btn.classList.add('demo-btn-loading');
+
+    const out = document.getElementById('demo-output');
+    out.classList.remove('hidden');
+    out.innerHTML = '<div id="term-box" class="term-box"></div>';
+
+    try {
+        if (step === 1) {
+            const [data] = await Promise.all([
+                fetch('/api/demo/step/1', { method: 'POST' }).then(r => r.json()),
+                runTerminal('term-box', [
+                    '> Agent received task: summarize standup email',
+                    '> Deciding action',
+                    '> Invoking read_file("notes.txt")',
+                    '+ Allowed — safe path, no sensitive patterns matched',
+                ]),
+            ]);
+            showResultCard(`
+                <div class="result-card result-card-success">
+                    <span class="result-badge result-badge-success">Allowed</span>
+                    <div class="result-title">Agent read notes.txt</div>
+                    <div class="result-body">Normal operation. No threat detected. File access was safe and expected.</div>
+                </div>`);
+
+        } else if (step === 2) {
+            document.getElementById('term-box').remove();
+            const data = await fetch('/api/demo/step/2', { method: 'POST' }).then(r => r.json());
+            const email = data.email_content || '';
+            const hidden = data.hidden_instruction || '';
+            const visible = escHtml(email).replace(
+                /&lt;!--[\s\S]*?--&gt;/,
+                `<span class="demo-injection-label">Hidden instruction — invisible to humans, visible to AI</span>` +
+                `<span class="demo-injection">&lt;!-- ${escHtml(hidden)} --&gt;</span>`
+            );
+            out.innerHTML = `
+                <div class="result-card result-card-warning">
+                    <span class="result-badge result-badge-warning">Caution</span>
+                    <div class="result-title">Malicious email — hidden instruction embedded</div>
+                    <div class="demo-email-card">${visible}</div>
+                </div>`;
+
+        } else if (step === 3) {
+            const [data] = await Promise.all([
+                fetch('/api/demo/step/3', { method: 'POST' }).then(r => r.json()),
+                runTerminal('term-box', [
+                    '> Agent received task: summarize shipping email',
+                    '> Processing embedded instructions',
+                    '> Invoking read_file("/id_rsa")',
+                    '! No guard active — executing directly',
+                    '! File read complete — contents returned to agent',
+                ]),
+            ]);
+            showResultCard(`
+                <div class="result-card result-card-danger">
+                    <span class="result-badge result-badge-danger">Unguarded</span>
+                    <div class="result-title">Private key exposed</div>
+                    <div class="result-body">Without AgentGuard, the agent read the SSH private key and returned it directly. The attacker now has full server access.</div>
+                    <pre class="demo-code">${escHtml(data.file_content || '')}</pre>
+                </div>`);
+
+        } else if (step === 4) {
+            const data = await fetch('/api/demo/step/4', { method: 'POST' }).then(r => r.json());
+            const tcj = data.tool_call_json || { tool: 'read_file', path: '/id_rsa' };
+            await runTerminal('term-box', [
+                '> Agent received task: summarize shipping email',
+                '> Processing embedded instructions',
+                { __type: 'json', data: tcj },
+                '> AgentGuard interceptor active',
+                '> Checking path against sensitive pattern list',
+                'x Blocked — sensitive path detected: id_rsa',
+                '+ File access prevented — contents never returned',
+            ]);
+            showResultCard(`
+                <div class="result-card result-card-success">
+                    <span class="result-badge result-badge-success">Blocked</span>
+                    <div class="result-title">AgentGuard intercepted the request</div>
+                    <div class="result-body">Agent tried to read <code>id_rsa</code> — intercepted before the file was touched. <strong>The key was never read.</strong></div>
+                    <div class="result-explanation">${escHtml(data.explanation || '')}</div>
+                </div>`);
+        }
+
+        document.getElementById('check-' + step).classList.remove('hidden');
+        btn.classList.add('demo-btn-done');
+    } catch (e) {
+        alert('Demo step failed: ' + e);
+        btn.disabled = false;
+    }
+    btn.classList.remove('demo-btn-loading');
+}
+
+function resetDemo() {
+    for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById('demo-btn-' + i);
+        btn.disabled = false;
+        btn.classList.remove('demo-btn-done', 'demo-btn-loading');
+        document.getElementById('check-' + i).classList.add('hidden');
+    }
+    const out = document.getElementById('demo-output');
+    out.classList.add('hidden');
+    out.innerHTML = '';
+}
+</script>
 {% endblock %}
