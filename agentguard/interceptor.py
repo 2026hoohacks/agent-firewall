@@ -11,6 +11,7 @@ import os
 import asyncio
 import json
 import time
+from collections import deque
 from typing import Any, Callable, Dict, List, Optional
 
 # ---------------------------------------------------------------------------
@@ -43,7 +44,7 @@ _EXPLANATIONS: Dict[str, str] = {
 }
 
 # In-memory event log — the UI reads from this
-_event_log: List[Dict[str, Any]] = []
+_event_log: deque[Dict[str, Any]] = deque(maxlen=1000)
 _pending_blocks: Dict[str, asyncio.Future] = {}
 
 
