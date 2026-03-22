@@ -7,29 +7,28 @@
     <div class="hero-inner">
         <p class="eyebrow">AI security</p>
         <h1>AgentGuard</h1>
-        <p class="hero-sub">Human-in-the-loop firewall for AI agents</p>
+        <p class="hero-sub">Stop AI agents from being weaponized against you.</p>
         <p class="hero-desc">
-            Supervise autonomous agents in real time. AgentGuard flags prompt injections, sensitive file access,
-            risky outbound transfers, suspicious requests, unauthorized tools, and policy violations — so you can
-            approve, block, and audit before damage lands.
+            AI agents can be hijacked with a single hidden line of text. AgentGuard sits between your agent and your files,
+            intercepting every tool call before it executes so a malicious email can't steal your data.
         </p>
         <div class="hero-actions">
             <a href="/dashboard" class="btn btn-primary btn-lg">Open Dashboard</a>
         </div>
+        <section class="feature-grid">
+            <article class="feature-card">
+                <h3>Live attack demo</h3>
+                <p>Step through a real prompt-injection attack. Watch a malicious email try to exfiltrate your SSH key, then see AgentGuard block it before the file is touched.</p>
+            </article>
+            <article class="feature-card">
+                <h3>Session report</h3>
+                <p>Full event history with allowed, blocked, and pending-review counts for the session. Export the entire audit log as JSON.</p>
+            </article>
+            <article class="feature-card">
+                <h3>Model vulnerability eval</h3>
+                <p>Run a prompt-injection test across multiple AI models and see which ones follow hidden instructions in email content and which ones refuse.</p>
+            </article>
+        </section>
     </div>
-</section>
-<section class="feature-grid">
-    <article class="feature-card">
-        <h3>Live supervision</h3>
-        <p>Streaming activity feed with severity and policy context for every flagged step.</p>
-    </article>
-    <article class="feature-card">
-        <h3>Attack interception</h3>
-        <p>Blocks prompt injection, sensitive file access, and unauthorized tool calls before they execute.</p>
-    </article>
-    <article class="feature-card">
-        <h3>Session audit</h3>
-        <p>Allowed vs blocked counts and an exportable JSON report for every session.</p>
-    </article>
 </section>
 {% endblock %}
