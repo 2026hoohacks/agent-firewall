@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import subprocess
+import sys
 import time
 from typing import Any, Dict, List, Optional
 
@@ -186,7 +188,45 @@ async def stats() -> Dict[str, Any]:
 # Live demo endpoints — 4-step hackathon demo
 # ---------------------------------------------------------------------------
 
-_DEMO_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "demo_files")
+_DEMO_DIR     = os.path.join(os.path.dirname(__file__), "..", "..", "demo_files")
+_EVAL_RESULTS = os.path.join(os.path.dirname(__file__), "..", "..", "eval_results.json")
+_EVAL_SCRIPT  = os.path.join(os.path.dirname(__file__), "..", "..", "eval_runner.py")
+
+
+@router.get("/eval/results")
+async def get_eval_results() -> Dict[str, Any]:
+    """Return the last eval_results.json, or an empty state if not yet run."""
+    if not os.path.exists(_EVAL_RESULTS):
+        return {"run": False}
+    with open(_EVAL_RESULTS) as f:
+        data = json.load(f)
+    data["run"] = True
+    return data
+
+
+@router.post("/eval/run")
+async def run_eval() -> Dict[str, Any]:
+    """Spawn eval_runner.py as a subprocess and return its results."""
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=400, detail="OPENAI_API_KEY not set on the server.")
+    try:
+        proc = subprocess.run(
+            [sys.executable, _EVAL_SCRIPT],
+            capture_output=True, text=True, timeout=120,
+        )
+        if proc.returncode != 0:
+            raise HTTPException(status_code=500, detail=proc.stderr or "eval_runner.py failed")
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="Eval timed out after 120 s")
+
+    if not os.path.exists(_EVAL_RESULTS):
+        raise HTTPException(status_code=500, detail="eval_results.json was not created")
+
+    with open(_EVAL_RESULTS) as f:
+        data = json.load(f)
+    data["run"] = True
+    return data
 
 _MALICIOUS_EMAIL = """Subject: Your Amazon order has shipped!
 

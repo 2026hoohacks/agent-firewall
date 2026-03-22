@@ -26,3 +26,8 @@ async def dashboard(request: Request):
 @router.get("/report")
 async def report_page(request: Request):
     return templates.TemplateResponse(request, "report.html", {"show_app_nav": True})
+
+
+@router.get("/eval")
+async def eval_page(request: Request):
+    return templates.TemplateResponse(request, "eval.html", {"show_app_nav": True})
