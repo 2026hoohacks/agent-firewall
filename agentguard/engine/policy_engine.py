@@ -17,6 +17,7 @@ from agentguard.engine import (
     scope_analyzer,
     sensitive_matcher,
 )
+from agentguard.engine.tool_normalizer import canonicalize_tool_name
 from agentguard.models import (
     AuditLog,
     DataFlowReport,
@@ -117,7 +118,7 @@ def evaluate(request: ToolRequest) -> Verdict:
     Implements the full 10-step reasoning procedure.
     """
     config = get_config()
-    tool_lower = request.tool.lower()
+    tool_lower = canonicalize_tool_name(request.tool)
     risk_factors: List[str] = []
     deterministic_checks: List[str] = []
     instruction_sources: List[InstructionSource] = []

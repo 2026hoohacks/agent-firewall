@@ -11,6 +11,7 @@ import re
 from typing import Any, Dict, List, Optional, Set
 
 from agentguard.models import PolicyConfig, RiskLevel, SensitivityReport
+from agentguard.engine.tool_normalizer import canonicalize_tool_name
 
 # ---------------------------------------------------------------------------
 # Built-in sensitive path patterns (always active, independent of config)
@@ -199,11 +200,11 @@ def check_tool(tool: str, action: Optional[str], config: PolicyConfig) -> Sensit
     matched: list[str] = []
     categories: list[str] = []
 
-    tool_lower = tool.lower()
+    tool_lower = canonicalize_tool_name(tool)
 
     # Blocked tools from policy
     for blocked in config.blocked_tools:
-        if tool_lower == blocked.lower():
+        if tool_lower == canonicalize_tool_name(blocked):
             return SensitivityReport(
                 is_sensitive=True,
                 matched_patterns=[f"blocked_tool:{blocked}"],
@@ -213,7 +214,7 @@ def check_tool(tool: str, action: Optional[str], config: PolicyConfig) -> Sensit
 
     # Safe tools from policy
     for safe in config.safe_tools:
-        if tool_lower == safe.lower():
+        if tool_lower == canonicalize_tool_name(safe):
             return SensitivityReport(is_sensitive=False, risk_level=RiskLevel.LOW)
 
     # Built-in dangerous tool map

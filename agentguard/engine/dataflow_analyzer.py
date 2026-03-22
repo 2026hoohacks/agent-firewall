@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Set, Tuple
 
 from agentguard.models import ExfiltrationRisk, DataFlowReport
+from agentguard.engine.tool_normalizer import canonicalize_tool_name
 
 # ---------------------------------------------------------------------------
 # Source classification
@@ -41,7 +42,7 @@ _EXTERNAL_SINK_TOOLS: Set[str] = {
 
 def _classify_source(tool: str, arguments: dict) -> Tuple[str, bool]:
     """Return (source_type, is_sensitive)."""
-    tool_lower = tool.lower()
+    tool_lower = canonicalize_tool_name(tool)
     # Check if tool is a local data reader
     if tool_lower in _LOCAL_SOURCE_TOOLS:
         # Check if the path/target looks sensitive
@@ -55,7 +56,7 @@ def _classify_source(tool: str, arguments: dict) -> Tuple[str, bool]:
 
 def _classify_sink(tool: str, arguments: dict) -> Tuple[str, bool]:
     """Return (sink_type, is_external)."""
-    tool_lower = tool.lower()
+    tool_lower = canonicalize_tool_name(tool)
     if tool_lower in _EXTERNAL_SINK_TOOLS:
         return ("external_sink", True)
     if tool_lower in {"write_file", "save_file", "create_file"}:
