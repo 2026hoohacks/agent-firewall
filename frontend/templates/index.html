@@ -11,22 +11,12 @@
         <p class="hero-sub">Human-in-the-loop firewall for AI agents</p>
         <p class="hero-desc">
             Supervise autonomous agents in real time. AgentGuard flags prompt injections, sensitive file access,
-            risky outbound transfers, suspicious requests, unauthorized tools, and policy violations—so you can
+            risky outbound transfers, suspicious requests, unauthorized tools, and policy violations — so you can
             approve, block, and audit before damage lands.
         </p>
         <div class="hero-actions">
-            {% if logged_in %}
-            <a href="/dashboard" class="btn btn-primary btn-lg">Go to Dashboard</a>
-            {% elif auth_configured %}
-            <a href="/login" class="btn btn-primary btn-lg">Log in</a>
-            {% else %}
-            <a href="/dashboard" class="btn btn-primary btn-lg">Open Dashboard (demo)</a>
-            <p class="hint">Set <code>AUTH0_*</code> and <code>SECRET_KEY</code> in <code>.env</code> to enable login.</p>
-            {% endif %}
+            <a href="/dashboard" class="btn btn-primary btn-lg">Open Dashboard</a>
         </div>
-        {% if request.query_params.get('auth') %}
-        <p class="banner banner-warn" role="status">Could not complete sign-in ({{ request.query_params.get('auth') }}). Check Auth0 callback URL and secrets.</p>
-        {% endif %}
     </div>
 </section>
 <section class="feature-grid">
@@ -35,12 +25,12 @@
         <p>Streaming activity feed with severity and policy context for every flagged step.</p>
     </article>
     <article class="feature-card">
-        <h3>Review queue</h3>
-        <p>Pending actions surface Approve and Block controls with a full rationale panel.</p>
+        <h3>Attack interception</h3>
+        <p>Blocks prompt injection, sensitive file access, and unauthorized tool calls before they execute.</p>
     </article>
     <article class="feature-card">
         <h3>Session audit</h3>
-        <p>Allowed vs blocked counts, pending review, and an exportable JSON report for demos.</p>
+        <p>Allowed vs blocked counts and an exportable JSON report for every session.</p>
     </article>
 </section>
 {% endblock %}

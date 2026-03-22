@@ -7,11 +7,7 @@
     if (!root) return;
 
     async function load() {
-        const res = await fetch('/api/report', { credentials: 'same-origin' });
-        if (res.status === 401) {
-            window.location.href = '/';
-            return;
-        }
+        const res = await fetch('/api/report');
         if (!res.ok) return;
         const data = await res.json();
         const s = data.summary || {};

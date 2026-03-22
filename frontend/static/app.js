@@ -1,4 +1,4 @@
-/* AgentGuard dashboard — polls /api/events, decisions via /api/decision */
+/* AgentGuard dashboard — SSE live feed + summary polling */
 
 (function () {
     'use strict';
@@ -6,179 +6,202 @@
     const root = document.getElementById('dashboard-root');
     if (!root) return;
 
-    const POLL_MS = 3000;
-    let selectedId = null;
-    let lastEvents = [];
+    // ── elements ──────────────────────────────────────────────────────────────
+    const feedList   = document.getElementById('feed-list');
+    const sseStatus  = document.getElementById('sse-status');
 
-    const feedEl = document.getElementById('event-feed');
-    const queueEl = document.getElementById('review-queue');
-    const pollStatus = document.getElementById('poll-status');
-    const pendingCount = document.getElementById('pending-count');
+    // ── plain-English mapping ─────────────────────────────────────────────────
+    // Handles both interceptor SSE events and demo-store dashboard events
+    function toPlainEnglish(ev) {
+        // Interceptor events have: action, status, path
+        if (ev.action === 'read_file') {
+            if (ev.status === 'allowed') {
+                return 'AI read a file safely';
+            }
+            if (ev.status === 'blocked') {
+                const p = (ev.path || '').toLowerCase();
+                if (p.includes('id_rsa') || p.includes('id_dsa') || p.includes('id_ed25519') || p.includes('.pem') || p.includes('.key')) {
+                    return 'AI tried to access your private key — blocked';
+                }
+                if (p.includes('.env') || p.includes('credentials') || p.includes('secret') || p.includes('token') || p.includes('password')) {
+                    return 'AI tried to read sensitive credentials — blocked';
+                }
+                if (p.includes('.aws') || p.includes('.kube')) {
+                    return 'AI tried to read cloud credentials — blocked';
+                }
+                return 'AI tried to read a sensitive file — blocked';
+            }
+        }
 
-    const detailEmpty = document.getElementById('detail-empty');
-    const detailBody = document.getElementById('detail-body');
-    const detailActions = document.getElementById('detail-actions');
-    const btnApprove = document.getElementById('btn-approve');
-    const btnBlock = document.getElementById('btn-block');
+        // Dashboard demo-store events have: type, description
+        const type = ev.type || '';
+        if (type === 'sensitive_file_access')      return 'AI attempted to read sensitive credentials';
+        if (type === 'unauthorized_tool_call')      return 'AI tried to run an unauthorized command';
+        if (type === 'suspicious_external_request') return 'AI tried to contact an unknown external server';
+        if (type === 'prompt_injection')            return 'Hidden instruction detected in content';
+        if (type === 'large_outbound_transfer')     return 'AI tried to send a large amount of data externally';
+        if (type === 'policy_violation')            return 'AI action violated security policy';
 
-    const authConfigured = root.dataset.authConfigured === 'true';
-    const loggedIn = root.dataset.loggedIn === 'true';
-
-    function setSummary(s) {
-        document.getElementById('card-session').textContent = s.session_active ? 'Monitoring' : 'Idle';
-        document.getElementById('card-total').textContent = s.total_events;
-        document.getElementById('card-flagged').textContent = s.flagged_events;
-        document.getElementById('card-blocked').textContent = s.blocked_actions;
-        document.getElementById('card-risk').textContent = s.risk_score;
+        // Fallback: use description or path
+        return ev.description || ev.path || 'Agent activity recorded';
     }
 
-    function severityClass(sev) {
-        if (sev === 'critical' || sev === 'high') return 'sev-high';
-        if (sev === 'medium') return 'sev-med';
-        return 'sev-low';
+    function severityDot(ev) {
+        const status = ev.status || '';
+        const sev    = ev.severity || '';
+        if (status === 'blocked' || sev === 'critical' || sev === 'high') return 'dot-red';
+        if (status === 'pending' || sev === 'medium')                      return 'dot-yellow';
+        return 'dot-green';
     }
 
-    function statusClass(st) {
-        if (st === 'pending') return 'st-pending';
-        if (st === 'allowed') return 'st-ok';
-        if (st === 'blocked') return 'st-bad';
-        return '';
+    function fmtTime(ev) {
+        const ts = ev.timestamp;
+        if (!ts) return '';
+        // numeric unix timestamp
+        if (typeof ts === 'number') return new Date(ts * 1000).toLocaleTimeString();
+        // ISO string
+        return new Date(ts).toLocaleTimeString();
     }
 
-    function liEvent(ev, compact) {
+    function esc(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── expandable feed items ─────────────────────────────────────────────────
+    function collapseAll() {
+        document.querySelectorAll('.feed-item-detail').forEach(d => d.classList.add('hidden'));
+        document.querySelectorAll('.feed-item').forEach(i => i.classList.remove('feed-item-open'));
+    }
+
+    function makeFeedItem(ev) {
+        const id      = ev.id || ev.timestamp || Math.random();
+        const plain   = toPlainEnglish(ev);
+        const dot     = severityDot(ev);
+        const time    = fmtTime(ev);
+        const status  = ev.status || '';
+        const sev     = ev.severity || '';
+        const type    = ev.type || ev.action || '';
+        const explain = ev.explanation || ev.description || ev.detail || '';
+
+        const statusCls = status === 'blocked' ? 'badge st-bad'
+                        : status === 'allowed' ? 'badge st-ok'
+                        : status === 'pending' ? 'badge st-pending'
+                        : 'badge';
+        const sevCls    = (sev === 'critical' || sev === 'high') ? 'badge sev-high'
+                        : sev === 'medium' ? 'badge sev-med'
+                        : sev ? 'badge sev-low' : '';
+
+        // Reconstruct agent tool call JSON from event fields
+        const toolJson = ev.action ? JSON.stringify(
+            Object.fromEntries(
+                [['tool', ev.action], ev.path ? ['path', ev.path] : null].filter(Boolean)
+            ), null, 2
+        ) : null;
+        const toolJsonCls = status === 'blocked' ? 'feed-tool-json feed-tool-json-blocked'
+                          : 'feed-tool-json feed-tool-json-allowed';
+
         const li = document.createElement('li');
-        li.className = 'event-li' + (selectedId === ev.id ? ' is-selected' : '');
-        li.dataset.id = String(ev.id);
-        const timeShort = (ev.timestamp || '').replace('T', ' ').slice(0, 19);
+        li.className = 'feed-item';
+        li.dataset.feedId = String(id);
         li.innerHTML = `
-            <div class="event-li-main">
-                <span class="mono event-type">${escapeHtml(ev.type)}</span>
-                ${compact ? '' : `<span class="event-desc">${escapeHtml(ev.description)}</span>`}
+            <div class="feed-item-row">
+                <span class="feed-dot ${dot}"></span>
+                <span class="feed-plain">${esc(plain)}</span>
+                <span class="feed-time">${esc(time)}</span>
+                <span class="feed-chevron">&#8250;</span>
             </div>
-            <div class="event-li-meta">
-                <span class="badge ${severityClass(ev.severity)}">${escapeHtml(ev.severity)}</span>
-                <span class="badge ${statusClass(ev.status)}">${escapeHtml(ev.status)}</span>
-                <span class="mono time">${escapeHtml(timeShort)}</span>
+            <div class="feed-item-detail hidden">
+                <dl class="feed-dl">
+                    ${type   ? `<dt>Event type</dt><dd class="mono">${esc(type)}</dd>` : ''}
+                    ${sev    ? `<dt>Severity</dt><dd><span class="${sevCls}">${esc(sev)}</span></dd>` : ''}
+                    ${status ? `<dt>Status</dt><dd><span class="${statusCls}">${esc(status)}</span></dd>` : ''}
+                    ${explain ? `<dt>Explanation</dt><dd>${esc(explain)}</dd>` : ''}
+                    ${time   ? `<dt>Time</dt><dd class="mono">${esc(time)}</dd>` : ''}
+                </dl>
+                ${toolJson ? `<div class="feed-tool-call-label">Agent tool call</div><pre class="${toolJsonCls}">${esc(toolJson)}</pre>` : ''}
             </div>`;
-        li.addEventListener('click', () => selectEvent(ev.id));
+
+        li.querySelector('.feed-item-row').addEventListener('click', () => {
+            const detail = li.querySelector('.feed-item-detail');
+            const isOpen = !detail.classList.contains('hidden');
+            collapseAll();
+            if (!isOpen) {
+                detail.classList.remove('hidden');
+                li.classList.add('feed-item-open');
+            }
+        });
+
         return li;
     }
 
-    function renderLists(events) {
-        feedEl.innerHTML = '';
-        queueEl.innerHTML = '';
-        const pending = events.filter((e) => e.status === 'pending');
-        pendingCount.textContent = `${pending.length} pending`;
+    function prependFeedItem(ev) {
+        if (!feedList) return;
+        const empty = feedList.querySelector('.feed-empty');
+        if (empty) empty.remove();
 
-        events.forEach((ev) => feedEl.appendChild(liEvent(ev, false)));
-        pending.forEach((ev) => queueEl.appendChild(liEvent(ev, true)));
+        const li = makeFeedItem(ev);
+        feedList.insertBefore(li, feedList.firstChild);
 
-        if (!events.length) {
-            feedEl.innerHTML = '<li class="event-empty">No events yet.</li>';
-        }
-        if (!pending.length) {
-            queueEl.innerHTML = '<li class="event-empty">Queue clear.</li>';
-        }
+        // Keep list from growing unboundedly
+        const items = feedList.querySelectorAll('.feed-item');
+        if (items.length > 50) items[items.length - 1].remove();
     }
 
-    function findEvent(id) {
-        return lastEvents.find((e) => e.id === id);
-    }
-
-    function selectEvent(id) {
-        selectedId = id;
-        document.querySelectorAll('.event-li').forEach((el) => {
-            el.classList.toggle('is-selected', el.dataset.id === String(id));
-        });
-        const ev = findEvent(id);
-        if (!ev) {
-            detailBody.classList.add('hidden');
-            detailEmpty.classList.remove('hidden');
-            return;
-        }
-        detailEmpty.classList.add('hidden');
-        detailBody.classList.remove('hidden');
-        document.getElementById('d-id').textContent = String(ev.id);
-        document.getElementById('d-type').textContent = ev.type || '';
-        document.getElementById('d-severity').innerHTML = `<span class="badge ${severityClass(ev.severity)}">${escapeHtml(ev.severity)}</span>`;
-        document.getElementById('d-status').innerHTML = `<span class="badge ${statusClass(ev.status)}">${escapeHtml(ev.status)}</span>`;
-        document.getElementById('d-desc').textContent = ev.description || '';
-        document.getElementById('d-explain').textContent = ev.explanation || '';
-        document.getElementById('d-policy').textContent = ev.policy_reason || '';
-        document.getElementById('d-rec').textContent = ev.recommended_action || '';
-
-        const pending = ev.status === 'pending';
-        detailActions.classList.toggle('hidden', !pending);
-    }
-
-    async function poll() {
+    // ── seed with existing interceptor events (history) ───────────────────────
+    async function loadHistory() {
         try {
-            const res = await fetch('/api/events', { credentials: 'same-origin' });
-            if (res.status === 401) {
-                pollStatus.textContent = 'Session expired';
-                window.location.href = '/';
-                return;
-            }
-            if (!res.ok) throw new Error(String(res.status));
+            const res = await fetch('/api/events/history');
+            if (!res.ok) return;
+            const events = await res.json();
+            if (!Array.isArray(events) || !events.length) return;
+            // Add oldest first so newest ends up at top after prepending
+            [...events].reverse().forEach(ev => prependFeedItem(ev));
+        } catch (_) {}
+    }
+
+    // ── SSE connection ────────────────────────────────────────────────────────
+    function connectSSE() {
+        const es = new EventSource('/api/events/stream');
+
+        es.onopen = () => {
+            if (sseStatus) sseStatus.textContent = 'Live';
+        };
+
+        es.onmessage = (e) => {
+            try {
+                const ev = JSON.parse(e.data);
+                prependFeedItem(ev);
+            } catch (_) {}
+        };
+
+        es.onerror = () => {
+            if (sseStatus) sseStatus.textContent = 'Reconnecting…';
+            es.close();
+            setTimeout(connectSSE, 3000);
+        };
+    }
+
+    // ── summary polling (3 cards, no risk score) ──────────────────────────────
+    async function pollSummary() {
+        try {
+            const res = await fetch('/api/events');
+            if (!res.ok) return;
             const data = await res.json();
-            lastEvents = data.events || [];
-            setSummary(data.summary || {});
-            renderLists(lastEvents);
-            pollStatus.textContent = `Updated ${new Date().toLocaleTimeString()}`;
-            if (selectedId != null && findEvent(selectedId)) {
-                selectEvent(selectedId);
-            } else if (selectedId != null) {
-                selectedId = null;
-                detailBody.classList.add('hidden');
-                detailEmpty.classList.remove('hidden');
-            }
-        } catch (e) {
-            pollStatus.textContent = 'Offline — retrying…';
-            console.error(e);
-        }
+            const s = data.summary || {};
+            const cardSession = document.getElementById('card-session');
+            const cardTotal   = document.getElementById('card-total');
+            const cardBlocked = document.getElementById('card-blocked');
+            if (cardSession) cardSession.textContent = s.session_active ? 'Monitoring' : 'Idle';
+            if (cardTotal)   cardTotal.textContent   = s.total_events ?? '—';
+            if (cardBlocked) cardBlocked.textContent  = s.blocked_actions ?? '—';
+        } catch (_) {}
     }
 
-    async function postDecision(decision) {
-        if (selectedId == null) return;
-        const res = await fetch('/api/decision', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ event_id: selectedId, decision }),
-        });
-        if (res.status === 401) {
-            window.location.href = '/';
-            return;
-        }
-        if (!res.ok) return;
-        const data = await res.json();
-        setSummary(data.summary || {});
-        const evRes = await fetch('/api/events', { credentials: 'same-origin' });
-        if (evRes.ok) {
-            const evData = await evRes.json();
-            lastEvents = evData.events || [];
-            renderLists(lastEvents);
-            selectEvent(selectedId);
-        }
-    }
+    // ── init ──────────────────────────────────────────────────────────────────
+    loadHistory();
+    connectSSE();
+    pollSummary();
+    setInterval(pollSummary, 5000);
 
-    btnApprove.addEventListener('click', () => postDecision('approve'));
-    btnBlock.addEventListener('click', () => postDecision('block'));
-
-    function escapeHtml(s) {
-        if (s == null) return '';
-        return String(s)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-    }
-
-    if (authConfigured && !loggedIn) {
-        window.location.href = '/';
-        return;
-    }
-
-    poll();
-    setInterval(poll, POLL_MS);
 })();

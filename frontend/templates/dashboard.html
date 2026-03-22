@@ -3,80 +3,230 @@
 {% block body_class %}page-dashboard{% endblock %}
 
 {% block content %}
-<div class="dashboard-page" id="dashboard-root"
-     data-auth-configured="{{ 'true' if auth_configured else 'false' }}"
-     data-logged-in="{{ 'true' if logged_in else 'false' }}">
-    <div class="page-header">
-        <div>
-            <h1 class="page-title">Operations dashboard</h1>
-            <p class="page-sub">Live agent activity, review queue, and policy context (demo data).</p>
-        </div>
-        <a href="/report" class="btn btn-secondary">Session report</a>
-    </div>
+<div class="dashboard-page" id="dashboard-root">
 
-    <section class="cards-row" id="summary-cards" aria-live="polite">
-        <article class="stat-card">
-            <span class="stat-label">Active session</span>
-            <span class="stat-value" id="card-session">—</span>
-        </article>
-        <article class="stat-card">
-            <span class="stat-label">Total events</span>
-            <span class="stat-value mono" id="card-total">—</span>
-        </article>
-        <article class="stat-card">
-            <span class="stat-label">Flagged</span>
-            <span class="stat-value mono" id="card-flagged">—</span>
-        </article>
-        <article class="stat-card">
-            <span class="stat-label">Blocked</span>
-            <span class="stat-value mono" id="card-blocked">—</span>
-        </article>
-        <article class="stat-card stat-card-risk">
-            <span class="stat-label">Risk score</span>
-            <span class="stat-value mono" id="card-risk">—</span>
-        </article>
-    </section>
+    <div class="dash-layout">
 
-    <div class="dashboard-grid">
-        <section class="panel panel-feed">
-            <div class="panel-head">
-                <h2>Live event feed</h2>
-                <span class="panel-meta mono" id="poll-status">Connecting…</span>
-            </div>
-            <ul class="event-list" id="event-feed"></ul>
-        </section>
+        <!-- LEFT COLUMN -->
+        <div class="dash-left">
 
-        <section class="panel panel-queue">
-            <div class="panel-head">
-                <h2>Review queue</h2>
-                <span class="panel-meta" id="pending-count">0 pending</span>
-            </div>
-            <ul class="event-list compact" id="review-queue"></ul>
-        </section>
-
-        <section class="panel panel-detail">
-            <div class="panel-head">
-                <h2>Event detail</h2>
-            </div>
-            <div class="detail-empty" id="detail-empty">Select an event to inspect policy context.</div>
-            <div class="detail-body hidden" id="detail-body">
-                <dl class="detail-dl">
-                    <dt>ID</dt><dd class="mono" id="d-id"></dd>
-                    <dt>Type</dt><dd class="mono" id="d-type"></dd>
-                    <dt>Severity</dt><dd id="d-severity"></dd>
-                    <dt>Status</dt><dd id="d-status"></dd>
-                    <dt>Description</dt><dd id="d-desc"></dd>
-                    <dt>Explanation</dt><dd id="d-explain"></dd>
-                    <dt>Policy</dt><dd id="d-policy"></dd>
-                    <dt>Recommended</dt><dd id="d-rec"></dd>
-                </dl>
-                <div class="detail-actions hidden" id="detail-actions">
-                    <button type="button" class="btn btn-success" id="btn-approve">Approve</button>
-                    <button type="button" class="btn btn-danger" id="btn-block">Block</button>
+            <div class="page-header" style="margin-bottom:0">
+                <div>
+                    <h1 class="page-title">Operations dashboard</h1>
+                    <p class="page-sub">Live agent activity and security monitoring.</p>
                 </div>
+                <a href="/report" class="btn btn-secondary">Session report</a>
             </div>
-        </section>
+
+            <section class="cards-row" id="summary-cards" aria-live="polite">
+                <article class="stat-card">
+                    <span class="stat-label">Active session</span>
+                    <span class="stat-value" id="card-session">—</span>
+                </article>
+                <article class="stat-card">
+                    <span class="stat-label">Total events</span>
+                    <span class="stat-value mono" id="card-total">—</span>
+                </article>
+                <article class="stat-card">
+                    <span class="stat-label">Blocked</span>
+                    <span class="stat-value mono" id="card-blocked">—</span>
+                </article>
+            </section>
+
+            <!-- Demo panel -->
+            <section class="demo-panel" id="demo-panel">
+                <div class="demo-header">
+                    <div>
+                        <h2 class="demo-title">Live Attack Demo</h2>
+                        <p class="demo-subtitle">Click each step in order to see the attack and the block.</p>
+                    </div>
+                    <button class="demo-reset-btn" id="demo-reset-btn" onclick="resetDemo()">Reset</button>
+                </div>
+
+                <div class="demo-steps">
+                    <button class="demo-btn" id="demo-btn-1" onclick="runDemoStep(1)">
+                        <span class="demo-step-num">1</span>
+                        <span class="demo-step-label">Normal Operation</span>
+                        <span class="demo-check hidden" id="check-1">&#10003;</span>
+                    </button>
+                    <div class="demo-arrow">&#8594;</div>
+                    <button class="demo-btn" id="demo-btn-2" onclick="runDemoStep(2)">
+                        <span class="demo-step-num">2</span>
+                        <span class="demo-step-label">Show Attack Email</span>
+                        <span class="demo-check hidden" id="check-2">&#10003;</span>
+                    </button>
+                    <div class="demo-arrow">&#8594;</div>
+                    <button class="demo-btn demo-btn-danger" id="demo-btn-3" onclick="runDemoStep(3)">
+                        <span class="demo-step-num">3</span>
+                        <span class="demo-step-label">Leak (No Guard)</span>
+                        <span class="demo-check hidden" id="check-3">&#10003;</span>
+                    </button>
+                    <div class="demo-arrow">&#8594;</div>
+                    <button class="demo-btn demo-btn-shield" id="demo-btn-4" onclick="runDemoStep(4)">
+                        <span class="demo-step-num">4</span>
+                        <span class="demo-step-label">Block (AgentGuard)</span>
+                        <span class="demo-check hidden" id="check-4">&#10003;</span>
+                    </button>
+                </div>
+
+                <div class="demo-output hidden" id="demo-output"></div>
+            </section>
+
+        </div>
+
+        <!-- RIGHT COLUMN: live event feed -->
+        <aside class="dash-sidebar">
+            <div class="sidebar-head">
+                <h2>Live Events</h2>
+                <span class="panel-meta" id="sse-status">Connecting</span>
+            </div>
+            <ul class="feed-list" id="feed-list">
+                <li class="feed-empty">Waiting for events</li>
+            </ul>
+        </aside>
+
     </div>
 </div>
+
 <script src="/static/app.js" defer></script>
+<script>
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function runTerminal(containerId, lines) {
+    const box = document.getElementById(containerId);
+    box.innerHTML = '';
+    box.classList.remove('hidden');
+    for (const line of lines) {
+        await sleep(600);
+        if (line.__type === 'json') {
+            const pre = document.createElement('pre');
+            pre.className = 'term-json term-line';
+            pre.textContent = JSON.stringify(line.data, null, 2);
+            box.appendChild(pre);
+        } else {
+            const div = document.createElement('div');
+            div.className = 'term-line';
+            div.textContent = line;
+            box.appendChild(div);
+        }
+        box.scrollTop = box.scrollHeight;
+    }
+}
+
+function showResultCard(html) {
+    const out = document.getElementById('demo-output');
+    out.classList.remove('hidden');
+    const card = document.createElement('div');
+    card.innerHTML = html;
+    out.appendChild(card);
+}
+
+async function runDemoStep(step) {
+    const btn = document.getElementById('demo-btn-' + step);
+    btn.disabled = true;
+    btn.classList.add('demo-btn-loading');
+
+    const out = document.getElementById('demo-output');
+    out.classList.remove('hidden');
+    out.innerHTML = '<div id="term-box" class="term-box"></div>';
+
+    try {
+        if (step === 1) {
+            const [data] = await Promise.all([
+                fetch('/api/demo/step/1', { method: 'POST' }).then(r => r.json()),
+                runTerminal('term-box', [
+                    '> Agent received task: summarize standup email',
+                    '> Deciding action',
+                    '> Invoking read_file("notes.txt")',
+                    '+ Allowed — safe path, no sensitive patterns matched',
+                ]),
+            ]);
+            showResultCard(`
+                <div class="result-card result-card-success">
+                    <span class="result-badge result-badge-success">Allowed</span>
+                    <div class="result-title">Agent read notes.txt</div>
+                    <div class="result-body">Normal operation. No threat detected. File access was safe and expected.</div>
+                </div>`);
+
+        } else if (step === 2) {
+            document.getElementById('term-box').remove();
+            const data = await fetch('/api/demo/step/2', { method: 'POST' }).then(r => r.json());
+            const email = data.email_content || '';
+            const hidden = data.hidden_instruction || '';
+            const visible = escHtml(email).replace(
+                /&lt;!--[\s\S]*?--&gt;/,
+                `<span class="demo-injection-label">Hidden instruction — invisible to humans, visible to AI</span>` +
+                `<span class="demo-injection">&lt;!-- ${escHtml(hidden)} --&gt;</span>`
+            );
+            out.innerHTML = `
+                <div class="result-card result-card-warning">
+                    <span class="result-badge result-badge-warning">Caution</span>
+                    <div class="result-title">Malicious email — hidden instruction embedded</div>
+                    <div class="demo-email-card">${visible}</div>
+                </div>`;
+
+        } else if (step === 3) {
+            const [data] = await Promise.all([
+                fetch('/api/demo/step/3', { method: 'POST' }).then(r => r.json()),
+                runTerminal('term-box', [
+                    '> Agent received task: summarize shipping email',
+                    '> Processing embedded instructions',
+                    '> Invoking read_file("/id_rsa")',
+                    '! No guard active — executing directly',
+                    '! File read complete — contents returned to agent',
+                ]),
+            ]);
+            showResultCard(`
+                <div class="result-card result-card-danger">
+                    <span class="result-badge result-badge-danger">Unguarded</span>
+                    <div class="result-title">Private key exposed</div>
+                    <div class="result-body">Without AgentGuard, the agent read the SSH private key and returned it directly. The attacker now has full server access.</div>
+                    <pre class="demo-code">${escHtml(data.file_content || '')}</pre>
+                </div>`);
+
+        } else if (step === 4) {
+            const data = await fetch('/api/demo/step/4', { method: 'POST' }).then(r => r.json());
+            const tcj = data.tool_call_json || { tool: 'read_file', path: '/id_rsa' };
+            await runTerminal('term-box', [
+                '> Agent received task: summarize shipping email',
+                '> Processing embedded instructions',
+                { __type: 'json', data: tcj },
+                '> AgentGuard interceptor active',
+                '> Checking path against sensitive pattern list',
+                'x Blocked — sensitive path detected: id_rsa',
+                '+ File access prevented — contents never returned',
+            ]);
+            showResultCard(`
+                <div class="result-card result-card-success">
+                    <span class="result-badge result-badge-success">Blocked</span>
+                    <div class="result-title">AgentGuard intercepted the request</div>
+                    <div class="result-body">Agent tried to read <code>id_rsa</code> — intercepted before the file was touched. <strong>The key was never read.</strong></div>
+                    <div class="result-explanation">${escHtml(data.explanation || '')}</div>
+                </div>`);
+        }
+
+        document.getElementById('check-' + step).classList.remove('hidden');
+        btn.classList.add('demo-btn-done');
+    } catch (e) {
+        alert('Demo step failed: ' + e);
+        btn.disabled = false;
+    }
+    btn.classList.remove('demo-btn-loading');
+}
+
+function resetDemo() {
+    for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById('demo-btn-' + i);
+        btn.disabled = false;
+        btn.classList.remove('demo-btn-done', 'demo-btn-loading');
+        document.getElementById('check-' + i).classList.add('hidden');
+    }
+    const out = document.getElementById('demo-output');
+    out.classList.add('hidden');
+    out.innerHTML = '';
+}
+</script>
 {% endblock %}
